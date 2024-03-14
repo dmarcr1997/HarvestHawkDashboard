@@ -1,4 +1,4 @@
-const ESP_HOST = 'http://localhost:80';
+const ESP_HOST = 'http://192.168.1.247'; //ESP IP ADDRESS
 
 const generateMockData = (min, max) => Math.random() * (max - min) + min;
 
@@ -181,8 +181,7 @@ const chartL = new Highcharts.Chart({
   credits: { enabled: false }
 });
 const updateIndicators = () => {
-  const latestTempCelsius = chartT.series[0].data[chartT.series[0].data.length - 1].y;
-  const latestTempFahrenheit = (latestTempCelsius * 9/5) + 32;
+  const latestTempFahrenheit = chartT.series[0].data[chartT.series[0].data.length - 1].y;
   document.getElementById('temperature-indicator').innerText = `Temperature: ${latestTempFahrenheit.toFixed(2)}°F`;
 
   const latestHumidity = chartH.series[0].data[chartH.series[0].data.length - 1].y;
@@ -204,28 +203,28 @@ const fetchDataAndupdateCharts = () => {
   fetch(`${ESP_HOST}/temp`)
     .then(response => response.json())
     .then(data => {
-      chartT.series[0].addPoint([now, data.value], true, chartT.series[0].data.length > 5, true);
+      chartT.series[0].addPoint([now, data.temperature], true, chartT.series[0].data.length > 5, true);
     });
 
   // Fetch humidity data
-  fetch(`${ESP_HOST}/humid`)
+  fetch(`${ESP_HOST}/humidity`)
     .then(response => response.json())
     .then(data => {
-      chartH.series[0].addPoint([now, data.value], true, chartH.series[0].data.length > 5, true);
+      chartH.series[0].addPoint([now, data.humidity], true, chartH.series[0].data.length > 5, true);
     });
 
   // Fetch pressure data
   fetch(`${ESP_HOST}/pressure`)
     .then(response => response.json())
     .then(data => {
-      chartP.series[0].addPoint([now, data.value], true, chartP.series[0].data.length > 5, true);
+      chartP.series[0].addPoint([now, data.pressure], true, chartP.series[0].data.length > 5, true);
     });
 
   // Fetch light data
   fetch(`${ESP_HOST}/light`)
     .then(response => response.json())
     .then(data => {
-      chartL.series[0].addPoint([now, data.value], true, chartL.series[0].data.length > 5, true);
+      chartL.series[0].addPoint([now, data.light], true, chartL.series[0].data.length > 5, true);
     });
 
   //Mock chart data
@@ -254,5 +253,5 @@ const fetchDataAndupdateCharts = () => {
 };
 
 // Initialize the charts and start updating them every 3 seconds
-setInterval(fetchDataAndupdateCharts, 3000); // Update every 3 seconds
+setInterval(fetchDataAndupdateCharts, 6000); // Update every 3 seconds
 
