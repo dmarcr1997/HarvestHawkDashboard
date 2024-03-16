@@ -33,10 +33,10 @@ This command uses nodemon for hot reloading. It watches for file changes in your
 ## Accessing the Data
 Once the server is running, you can access the randomized environmental data through the following HTTP endpoints:
 
-- Temperature: http://localhost/temp
-- Pressure: http://localhost/pressure
-- Humidity: http://localhost/humidity
-- Light: http://localhost/light
+- Temperature: http://localhost:80/temp
+- Pressure: http://localhost:80/pressure
+- Humidity: http://localhost:80/humidity
+- Light: http://localhost:80/light
 
 Each endpoint returns a JSON object with the respective data. For example:
 ```json
