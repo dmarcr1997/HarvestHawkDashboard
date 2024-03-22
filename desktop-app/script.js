@@ -1,237 +1,137 @@
 const ESP_HOST = 'http://localhost:80'; //ESP IP ADDRESS
 
-const generateMockData = (min, max) => Math.random() * (max - min) + min;
+const temperatureChart = createD3Chart('chart-temperature', '#f00', 'Temperature');
+const humidityChart = createD3Chart('chart-humidity', '#00f', 'Humidity');
+const pressureChart = createD3Chart('chart-pressure', '#0f0', 'Pressure');
+const lightChart = createD3Chart('chart-light', '#ff0', 'Light Intensity');
 
-const chartT = new Highcharts.Chart({
-  chart: { 
-    renderTo: 'chart-temperature',
-    backgroundColor: 'black'
-},
-  title: { 
-    text: 'AM2330 Temperature',
-    style: {
-      color: '#FFFFFF' 
-    }
-},
-  series: [{
-    showInLegend: false,
-    data: [] 
-  }],
-  plotOptions: {
-    line: {
-      animation: true,
-      dataLabels: { enabled: true },
-      marker: { enabled: true }
-    },
-    series: { color: '#059e8a' }
-  },
-  xAxis: {
-    type: 'datetime',
-    dateTimeLabelFormats: { second: '%H:%M:%S' },
-    events: {
-      setExtremes: function(e) {
-        this.chart.series.forEach((series) => {
-          series.update({
-            dataLabels: {
-              enabled: e.min !== undefined
-            }
-          }, false);
-        });
-        this.chart.redraw();
-      }
-    }
-  },
-  yAxis: {
-    title: { text: 'Temperature (Celsius)' }
-  },
-  credits: { enabled: false }
-});
+let latestTemperature = null;
+let latestHumidity = null;
+let latestPressure = null;
+let latestLight = null;
 
-const chartH = new Highcharts.Chart({
-  chart: { 
-    renderTo: 'chart-humidity',
-    backgroundColor: 'black'
-},
-  title: { 
-    text: 'AM2320 Humidity',
-    style: {
-      color: '#FFFFFF' 
-    }
-},
-  series: [{
-    showInLegend: false,
-    data: [] 
-  }],
-  plotOptions: {
-    line: {
-      animation: true,
-      dataLabels: { enabled: true },
-      marker: { enabled: true }
-    }
-  },
-  xAxis: {
-    type: 'datetime',
-    dateTimeLabelFormats: { second: '%H:%M:%S' },
-    events: {
-      setExtremes: function(e) {
-        this.chart.series.forEach((series) => {
-          series.update({
-            dataLabels: {
-              enabled: e.min !== undefined 
-            }
-          }, false);
-        });
-        this.chart.redraw();
-      }
-    }
-  },
-  yAxis: {
-    title: { text: 'Humidity (%)' }
-  },
-  credits: { enabled: false }
-});
+let temperatureData = [];
+let humidityData = [];
+let pressureData = [];
+let lightData = [];
 
-const chartP = new Highcharts.Chart({
-  chart: { 
-    renderTo: 'chart-pressure',
-    backgroundColor: 'black'
-},
-  title: { 
-    text: 'BMP390 Pressure',
-    style: {
-      color: '#FFFFFF' 
-    }
-},
-  series: [{
-    showInLegend: false,
-    data: [] 
-  }],
-  plotOptions: {
-    line: {
-      animation: true,
-      dataLabels: { enabled: true },
-      marker: { enabled: true }
-    },
-    series: { color: '#18009c' }
-  },
-  xAxis: {
-    type: 'datetime',
-    dateTimeLabelFormats: { second: '%H:%M:%S' },
-    events: {
-      setExtremes: function(e) {
-        this.chart.series.forEach((series) => {
-          series.update({
-            dataLabels: {
-              enabled: e.min !== undefined
-            }
-          }, false);
-        });
-        this.chart.redraw();
-      }
-    }
-  },
-  yAxis: {
-    title: { text: 'Pressure (hPa)' }
-  },
-  credits: { enabled: false }
-});
+function createD3Chart(containerId, color, title) {
+  const margin = { top: 20, right: 20, bottom: 30, left: 50 },
+        width = 480 - margin.left - margin.right,
+        height = 300 - margin.top - margin.bottom;
 
-const chartL = new Highcharts.Chart({
-  chart: { 
-    renderTo: 'chart-light',
-    backgroundColor: 'black'
-},
-  title: { 
-    text: 'VEML7700 Light Intensity',
-    style: {
-      color: '#FFFFFF' 
+  const svg = d3.select(`#${containerId}`)
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Define the scales and axes
+  const xScale = d3.scaleTime().range([0, width]);
+  const yScale = d3.scaleLinear().range([height, 0]);
+
+  svg.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .attr("class", "x-axis");
+
+  svg.append("g")
+    .attr("class", "y-axis");
+
+  // Create the line generator
+  const line = d3.line()
+    .x(d => xScale(d.x))
+    .y(d => yScale(d.y));
+
+  // Append the path for the line, but without specifying the d attribute yet
+  svg.append("path")
+    .attr("class", "data-line")
+    .style("fill", "none")
+    .style("stroke", color)
+    .style("stroke-width", 2);
+
+  return {
+    update: function(data) {
+      // Update scales
+      xScale.domain(d3.extent(data, d => d.x));
+      yScale.domain([0, d3.max(data, d => d.y)]);
+
+      // Update axes
+      svg.select(".x-axis").call(d3.axisBottom(xScale));
+      svg.select(".y-axis").call(d3.axisLeft(yScale));
+
+      // Update line
+      svg.select(".data-line")
+        .datum(data)
+        .attr("d", line);
     }
-},
-  series: [{
-    showInLegend: false,
-    data: [] 
-  }],
-  plotOptions: {
-    line: {
-      animation: true,
-      dataLabels: { enabled: true },
-      marker: { enabled: true }
-    },
-    series: { color: '#e2ba13' }
-  },
-  xAxis: {
-    type: 'datetime',
-    dateTimeLabelFormats: { second: '%H:%M:%S' },
-    events: {
-      setExtremes: function(e) {
-        this.chart.series.forEach((series) => {
-          series.update({
-            dataLabels: {
-              enabled: e.min !== undefined 
-            }
-          }, false);
-        });
-        this.chart.redraw();
-      }
-    }
-  },
-  yAxis: {
-    title: { text: 'Light Intensity (Lux)' }
-  },
-  credits: { enabled: false }
-});
+  };
+}
+
 const updateIndicators = () => {
-  const latestTempFahrenheit = chartT.series[0].data[chartT.series[0].data.length - 1].y;
-  document.getElementById('temperature-indicator').innerText = `Temperature: ${latestTempFahrenheit.toFixed(2)}°F`;
+  if (latestTemperature !== null) {
+    document.getElementById('temperature-indicator').innerText = `Temperature: ${latestTemperature.toFixed(2)}°F`;
+  }
+  
+  if (latestHumidity !== null) {
+    document.getElementById('humidity-indicator').innerText = `Humidity: ${latestHumidity.toFixed(2)}%`;
+  }
 
-  const latestHumidity = chartH.series[0].data[chartH.series[0].data.length - 1].y;
-  document.getElementById('humidity-indicator').innerText = `Humidity: ${latestHumidity.toFixed(2)}%`;
-
-  const latestPressure = chartP.series[0].data[chartP.series[0].data.length - 1].y;
   let pressureCategory = 'Medium';
   if (latestPressure < 980) pressureCategory = 'Low';
   else if (latestPressure > 1020) pressureCategory = 'High';
-  document.getElementById('pressure-indicator').innerText = `Pressure: ${latestPressure.toFixed(2)} hPa (${pressureCategory})`;
+  
+  if (latestPressure !== null) {
+    document.getElementById('pressure-indicator').innerText = `Pressure: ${latestPressure.toFixed(2)} hPa (${pressureCategory})`;
+  }
 
-   const latestLightIntensity = chartL.series[0].data[chartL.series[0].data.length - 1].y;
-  document.getElementById('light-indicator').innerText = `Light Intensity: ${latestLightIntensity.toFixed(2)} Lux`;
+  if (latestLight !== null) {
+    document.getElementById('light-indicator').innerText = `Light Intensity: ${latestLight.toFixed(2)} Lux`;
+  }
 };
 
-const fetchDataAndupdateCharts = () => {
-  const now = (new Date()).getTime();
+const fetchDataAndUpdateCharts = () => {
+  const now = new Date();
 
-  //Fetch chart data from ESP32
-   // Fetch temperature data
   fetch(`${ESP_HOST}/temp`)
     .then(response => response.json())
     .then(data => {
-      chartT.series[0].addPoint([now, data.temperature], true, chartT.series[0].data.length > 5, true);
+      latestTemperature = data.temperature;
+      temperatureData.push({ x: now, y: data.temperature });
+      temperatureChart.update(temperatureData); 
     });
 
-  // Fetch humidity data
   fetch(`${ESP_HOST}/humidity`)
     .then(response => response.json())
     .then(data => {
-      chartH.series[0].addPoint([now, data.humidity], true, chartH.series[0].data.length > 5, true);
+      latestHumidity = data.humidity;
+      humidityData.push({ x: now, y: data.humidity });
+      humidityChart.update(humidityData);
     });
 
-  // Fetch pressure data
   fetch(`${ESP_HOST}/pressure`)
     .then(response => response.json())
     .then(data => {
-      chartP.series[0].addPoint([now, data.pressure], true, chartP.series[0].data.length > 5, true);
+      latestPressure = data.pressure;
+      pressureData.push({ x: now, y: data.pressure });
+      pressureChart.update(pressureData);
     });
 
-  // Fetch light data
   fetch(`${ESP_HOST}/light`)
     .then(response => response.json())
     .then(data => {
-      chartL.series[0].addPoint([now, data.light], true, chartL.series[0].data.length > 5, true);
+      latestLight = data.light;
+      lightData.push({ x: now, y: data.light });
+      lightChart.update(lightData);
     });
 
-    updateIndicators();
+  updateIndicators();
 };
 
-// Initialize the charts and start updating them every 3 seconds
-setInterval(fetchDataAndupdateCharts, 3000); // Update every 3 seconds
+const limitDataLength = (data, maxLength = 10) => {
+  while (data.length > maxLength) {
+    data.shift();
+  }
+};
 
+setInterval(fetchDataAndUpdateCharts, 100);

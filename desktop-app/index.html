@@ -3,19 +3,36 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
-  <h2>Harvest Hawk</h2>
-  <div id="temperature-indicator">Temperature: --°F</div>
-  <div id="humidity-indicator">Humidity: --%</div>
-  <div id="pressure-indicator">Pressure: -- hPa (--)</div>
-  <div id="light-indicator">Light Intensity -- Lux</div>
-  <div id="chart-temperature" class="container"></div>
-  <div id="chart-humidity" class="container"></div>
-  <div id="chart-pressure" class="container"></div>
-  <div id="chart-light" class="container"></div>
+  <main>
+    <h2>Harvest Hawk</h2>
+    <div class="container">
+      <div class="grid">
+        <div>
+          <h4 id="temperature-indicator">Temperature: --°F</h4>  
+          <div id="chart-temperature" class="chart-container"></div>
+        </div>
+        
+        <div>
+          <h4 id="humidity-indicator">Humidity: --%</h4>
+          <div id="chart-humidity" class="chart-container"></div>
+        </div>
 
+        <div>
+          <h4 id="pressure-indicator">Pressure: -- hPa (--)</h4>
+          <div id="chart-pressure" class="chart-container"></div>
+        </div>
+
+        <div>
+          <h4 id="light-indicator">Light Intensity -- Lux</h4>
+          <div id="chart-light" class="chart-container"></div>
+        </div>
+      </div>
+    </div>
+  </main>
   <script src="script.js"></script>
 </body>
+
 </html>
